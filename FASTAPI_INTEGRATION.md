@@ -1,6 +1,6 @@
 # FastAPI Backend Integration Guide
 
-This guide explains how to connect your React frontend to a FastAPI backend.
+This guide explains how to connect your React frontend to the RAG Chatbot API FastAPI backend.
 
 ## Overview
 
@@ -12,7 +12,7 @@ This application is a **React + TypeScript** frontend built with:
 - **TanStack Query (React Query)** - Server state management
 - **Tailwind CSS + shadcn/ui** - Styling
 
-Currently, the app uses **in-memory state** with mock data. This guide shows you how to connect it to your FastAPI backend.
+The frontend now includes a complete API service layer that matches the **RAG Chatbot API OpenAPI specification v1.0.0**, providing type-safe access to all backend endpoints.
 
 ## Architecture
 
@@ -47,227 +47,288 @@ src/
    VITE_API_TIMEOUT=30000
    ```
 
-### Step 2: Start Your FastAPI Backend
+### Step 2: Start the Example Backend
 
-Make sure your FastAPI backend is running on the configured URL (e.g., `http://localhost:8000`).
+The repository includes a complete RAG Chatbot API example implementation:
 
-### Step 3: Update Frontend to Use API
+```bash
+cd backend-example
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 
-The API service layer is already created in `src/services/api.ts`. Now you need to update the hooks to use it instead of mock data.
+Then access:
+- API: http://localhost:8000/api/v1
+- Interactive docs: http://localhost:8000/docs
+- Alternative docs: http://localhost:8000/redoc
 
-## API Service Layer
+### Step 3: Start the Frontend
+
+```bash
+npm install
+npm run dev
+```
+
+## RAG Chatbot API Service Layer
 
 ### API Client Features
 
-The `api.ts` file provides:
+The `api.ts` file provides a complete implementation of the RAG Chatbot API OpenAPI specification v1.0.0:
 
 - **APIClient class** - Generic HTTP client with methods:
-  - `get<T>()` - GET requests
-  - `post<T>()` - POST requests
+  - `get<T>()` - GET requests with query params
+  - `post<T>()` - POST requests with JSON body
   - `put<T>()` - PUT requests
   - `patch<T>()` - PATCH requests
   - `delete<T>()` - DELETE requests
   - `uploadFile<T>()` - File uploads with FormData
-  - `stream()` - Streaming responses for chat
+  - `stream()` - Server-Sent Events (SSE) for streaming
 
 - **Error handling** - Custom APIError class with status codes
-- **Timeout support** - Configurable request timeouts
+- **Timeout support** - Configurable request timeouts (default 30s)
+- **Type safety** - Full TypeScript types matching OpenAPI spec
 - **Pre-configured endpoints** - Ready-to-use API methods
 
-### Example API Endpoints
+### Available API Endpoints
 
-The service includes example endpoints for:
+The service layer includes complete implementations for:
 
+#### Health API
 ```typescript
-// Projects
+healthAPI.root()                    // GET / - Root health check
+healthAPI.getStatus()               // GET /status - System status
+healthAPI.getCacheStatus()          // GET /cache - Redis cache status
+```
+
+#### Documents API
+```typescript
+documentsAPI.upload(file)           // POST /documents/upload - Upload PDF
+documentsAPI.list({ limit, offset }) // GET /documents - List documents
+documentsAPI.get(docId)             // GET /documents/{doc_id} - Get details
+documentsAPI.delete(docId)          // DELETE /documents/{doc_id} - Delete
+```
+
+#### Chat API
+```typescript
+chatAPI.chat(request)               // POST /chat - Streaming chat (SSE)
+chatAPI.chatComplete(request)       // POST /chat/complete - Complete response
+```
+
+#### RAG Framework API
+```typescript
+ragAPI.getFramework()               // GET /rag/framework - Current framework
+ragAPI.getStats()                   // GET /rag/stats - Performance stats
+```
+
+#### Queue API
+```typescript
+queueAPI.getStatus()                // GET /queue/status - Queue metrics
+queueAPI.healthCheck()              // GET /queue/health - Health check
+queueAPI.retryDocument(docId)       // POST /queue/retry/{document_id}
+queueAPI.listDeadLetter({ limit, offset }) // GET /queue/dead-letter
+queueAPI.reprocessAllDLQ()          // POST /queue/dead-letter/reprocess-all
+queueAPI.purgeAllQueues()           // DELETE /queue/purge
+queueAPI.getDocumentStatus(docId)   // GET /queue/document/{document_id}/status
+queueAPI.processRetryQueue()        // POST /queue/process-retry-queue
+```
+
+#### Legacy API (backward compatibility)
+```typescript
+// Project-based endpoints (original Pre-Flight Check API)
 projectsAPI.list()
-projectsAPI.create({ name: "...", description: "..." })
-projectsAPI.update(id, { name: "..." })
-projectsAPI.delete(id)
-
-// Documents
-documentsAPI.list(projectId)
-documentsAPI.upload(projectId, file)
-documentsAPI.delete(projectId, documentId)
-
-// Chat
-chatAPI.sendMessage(projectId, message)
-chatAPI.streamMessage(projectId, message)
-chatAPI.getHistory(projectId)
-chatAPI.clearHistory(projectId)
-
-// Prompts
+legacyDocumentsAPI.upload(projectId, file)
+legacyChatAPI.sendMessage(projectId, message)
 promptsAPI.list()
-promptsAPI.create({ title: "...", content: "...", category: "..." })
-promptsAPI.toggleFavorite(id)
 ```
 
-## Required FastAPI Backend Endpoints
+## RAG Chatbot API OpenAPI Specification
 
-Your FastAPI backend should implement these endpoints:
+The backend implements the complete RAG Chatbot API v1.0.0 specification. See the example backend in `backend-example/` for a full implementation.
 
-### Projects API
+### Key Request/Response Models
 
-```python
-# GET /api/v1/projects - List all projects
-# POST /api/v1/projects - Create project
-# GET /api/v1/projects/{id} - Get project details
-# PATCH /api/v1/projects/{id} - Update project
-# DELETE /api/v1/projects/{id} - Delete project
-```
-
-**Request/Response Models:**
-
-```python
-class ProjectCreate(BaseModel):
-    name: str
-    description: str
-
-class ProjectUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-
-class ProjectResponse(BaseModel):
-    id: str
-    name: str
-    description: str
-    document_count: int
-    last_modified: datetime
-    created_at: datetime
-```
-
-### Documents API
-
-```python
-# GET /api/v1/projects/{project_id}/documents - List documents
-# POST /api/v1/projects/{project_id}/documents - Upload document
-# DELETE /api/v1/projects/{project_id}/documents/{document_id} - Delete document
-```
-
-**Request/Response Models:**
-
-```python
-class DocumentResponse(BaseModel):
-    id: str
-    project_id: str
-    name: str
-    size: int
-    uploaded_at: datetime
-    status: Literal["uploading", "processing", "ready", "error"]
-```
-
-### Chat API
-
-```python
-# POST /api/v1/projects/{project_id}/chat - Send message
-# POST /api/v1/projects/{project_id}/chat/stream - Stream response (SSE)
-# GET /api/v1/projects/{project_id}/chat/history - Get chat history
-# DELETE /api/v1/projects/{project_id}/chat/history - Clear history
-```
-
-**Request/Response Models:**
+#### Chat Models
 
 ```python
 class ChatRequest(BaseModel):
-    message: str
+    query: str  # 1-1000 characters
+    doc_id: Optional[str] = None  # Optional document filter
+    framework: Literal["haystack"] = "haystack"
+    stream: bool = False
+    temperature: float = 0.7  # 0.0-2.0
+    max_tokens: int = 1000  # 1-4000
+    use_perplexity: bool = False  # Web context enhancement
+
+class ChatResponse(BaseModel):
+    answer: str
+    sources: Optional[List[Source]] = None
+    framework: str
+    tokens_used: int
+    latency_ms: float
+    cached: bool = False
+    web_context: Optional[str] = None
+    prompt_metadata: Optional[Dict[str, Any]] = None
 
 class Source(BaseModel):
-    document_name: str
-    excerpt: str
-    page: Optional[int] = None
-
-class ChatMessage(BaseModel):
-    id: str
-    role: Literal["user", "assistant"]
-    content: str
-    timestamp: datetime
-    sources: Optional[List[Source]] = None
+    content: str  # Chunk content
+    score: float  # Relevance score
+    metadata: Optional[Dict[str, Any]] = None
 ```
 
-### Prompts API
+#### Document Models
 
 ```python
-# GET /api/v1/prompts - List all prompts
-# POST /api/v1/prompts - Create prompt
-# GET /api/v1/prompts/{id} - Get prompt
-# PATCH /api/v1/prompts/{id} - Update prompt
-# DELETE /api/v1/prompts/{id} - Delete prompt
-# POST /api/v1/prompts/{id}/favorite - Toggle favorite
+class DocumentUploadResponse(BaseModel):
+    document_id: str
+    filename: str
+    status: str  # "processing", "ready", "error"
+    uploaded_at: str  # ISO 8601 datetime
+    framework: str  # "haystack"
+
+class DocumentListResponse(BaseModel):
+    documents: List[DocumentListItem]
+    total: int
+    limit: int
+    offset: int
+
+class DocumentDetailResponse(BaseModel):
+    document_id: str
+    filename: str
+    uploaded_at: str
+    indexed_at: Optional[str] = None
+    status: str
+    framework: str
+    size: Optional[int] = None
+    chunks: Optional[int] = None
+    metadata: Dict[str, Any] = {}
 ```
 
-**Request/Response Models:**
+#### RAG Framework Models
 
 ```python
-class PromptCreate(BaseModel):
-    title: str
-    content: str
-    category: Literal["SOC 2", "GDPR", "Privacy Policy", "Terms of Service"]
+class FrameworkStatusResponse(BaseModel):
+    framework: str
+    available_frameworks: List[str]
 
-class PromptResponse(BaseModel):
-    id: str
-    title: str
-    content: str
-    category: str
-    is_favorite: bool
-    created_at: datetime
+class RAGStatsResponse(BaseModel):
+    current_framework: str
+    haystack: HaystackStats
+
+class HaystackStats(BaseModel):
+    total_queries: int
+    avg_latency_ms: float
+    p95_latency_ms: float
+    p99_latency_ms: float
+    cache_hit_rate: float
+    error_rate: float
 ```
 
-## Example FastAPI Backend Structure
-
-Here's a minimal FastAPI backend structure:
+#### Queue Models
 
 ```python
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
-
-app = FastAPI()
-
-# Enable CORS for React frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite dev server
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Models
-class ProjectCreate(BaseModel):
-    name: str
-    description: str
-
-class ProjectResponse(BaseModel):
-    id: str
-    name: str
-    description: str
-    document_count: int
-    last_modified: datetime
-    created_at: datetime
-
-# Routes
-@app.get("/api/v1/projects")
-async def list_projects() -> List[ProjectResponse]:
-    # Your implementation
-    return []
-
-@app.post("/api/v1/projects")
-async def create_project(project: ProjectCreate) -> ProjectResponse:
-    # Your implementation
-    pass
-
-@app.post("/api/v1/projects/{project_id}/documents")
-async def upload_document(project_id: str, file: UploadFile = File(...)):
-    # Your implementation
-    pass
-
-@app.post("/api/v1/projects/{project_id}/chat")
-async def send_chat_message(project_id: str, request: ChatRequest):
-    # Your implementation
-    pass
+class QueueHealthResponse(BaseModel):
+    healthy: bool
+    queue_depth: int
+    processing: int
+    retry: int
+    dead_letter: int
+    timestamp: str
 ```
+
+## Example Usage
+
+### TypeScript/React Usage
+
+```typescript
+import { documentsAPI, chatAPI, ragAPI, queueAPI } from '@/services/api';
+
+// Upload a PDF document
+const uploadDocument = async (file: File) => {
+  const response = await documentsAPI.upload(file);
+  console.log('Uploaded:', response.document_id);
+};
+
+// List documents with pagination
+const listDocs = async () => {
+  const response = await documentsAPI.list({ limit: 20, offset: 0 });
+  console.log('Total documents:', response.total);
+};
+
+// Query with RAG (complete response)
+const queryDocuments = async (query: string) => {
+  const response = await chatAPI.chatComplete({
+    query,
+    temperature: 0.7,
+    max_tokens: 1000,
+    use_perplexity: false
+  });
+  console.log('Answer:', response.answer);
+  console.log('Sources:', response.sources);
+};
+
+// Get RAG statistics
+const getStats = async () => {
+  const stats = await ragAPI.getStats();
+  console.log('Total queries:', stats.haystack.total_queries);
+  console.log('Avg latency:', stats.haystack.avg_latency_ms, 'ms');
+};
+
+// Check queue health
+const checkQueue = async () => {
+  const health = await queueAPI.healthCheck();
+  console.log('Queue healthy:', health.healthy);
+  console.log('Queue depth:', health.queue_depth);
+};
+```
+
+### cURL Examples
+
+```bash
+# Upload a PDF document
+curl -X POST "http://localhost:8000/api/v1/documents/upload" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@document.pdf"
+
+# List documents
+curl "http://localhost:8000/api/v1/documents?limit=10&offset=0"
+
+# Query with RAG (complete response)
+curl -X POST "http://localhost:8000/api/v1/chat/complete" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is the main topic of the document?",
+    "temperature": 0.7,
+    "max_tokens": 1000
+  }'
+
+# Get RAG statistics
+curl "http://localhost:8000/api/v1/rag/stats"
+
+# Check queue health
+curl "http://localhost:8000/api/v1/queue/health"
+
+# Delete a document
+curl -X DELETE "http://localhost:8000/api/v1/documents/{doc_id}"
+```
+
+### Python FastAPI Implementation
+
+See the complete example in `backend-example/main.py` for a full implementation including:
+- All health, document, chat, RAG, and queue endpoints
+- Pydantic models matching the OpenAPI spec
+- Mock implementations showing the expected behavior
+- CORS configuration for frontend integration
+- Server-Sent Events (SSE) for streaming chat
+- Queue management with retry and dead-letter queues
+
+To run the example backend:
+```bash
+cd backend-example
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+Then visit http://localhost:8000/docs for interactive API documentation.
 
 ## Updating the Frontend to Use the API
 
