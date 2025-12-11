@@ -183,9 +183,194 @@ export class APIClient {
 export const apiClient = new APIClient();
 
 /**
- * Example API endpoints
- * Uncomment and modify these based on your FastAPI backend structure
+ * RAG Chatbot API endpoints matching OpenAPI spec v1.0.0
  */
+
+import type {
+  HealthResponse,
+  StatusResponse,
+  CacheStatusResponse,
+  ChatRequest,
+  ChatResponse,
+  DocumentUploadResponse,
+  DocumentListResponse,
+  DocumentDetailResponse,
+  DocumentDeleteResponse,
+  FrameworkStatusResponse,
+  RAGStatsResponse,
+  QueueStatusResponse,
+  QueueHealthResponse,
+  RetryDocumentResponse,
+  DeadLetterQueueResponse,
+  ReprocessAllDLQResponse,
+  PurgeQueuesResponse,
+  DocumentProcessingStatusResponse,
+  ProcessRetryQueueResponse,
+} from '../types';
+
+// ============================================================================
+// Health API
+// ============================================================================
+
+export const healthAPI = {
+  /**
+   * Root health check endpoint
+   * GET /
+   */
+  root: () => apiClient.get<HealthResponse>('/'),
+
+  /**
+   * Get detailed system status including service connections
+   * GET /status
+   */
+  getStatus: () => apiClient.get<StatusResponse>('/status'),
+
+  /**
+   * Get Redis cache status and statistics
+   * GET /cache
+   */
+  getCacheStatus: () => apiClient.get<CacheStatusResponse>('/cache'),
+};
+
+// ============================================================================
+// Documents API
+// ============================================================================
+
+export const documentsAPI = {
+  /**
+   * Upload a PDF document for indexing
+   * POST /documents/upload
+   */
+  upload: (file: File) => 
+    apiClient.uploadFile<DocumentUploadResponse>('/documents/upload', file),
+
+  /**
+   * List all uploaded documents
+   * GET /documents
+   */
+  list: (params?: { limit?: number; offset?: number }) => 
+    apiClient.get<DocumentListResponse>('/documents', params),
+
+  /**
+   * Get document details by ID
+   * GET /documents/{doc_id}
+   */
+  get: (docId: string) => 
+    apiClient.get<DocumentDetailResponse>(`/documents/${docId}`),
+
+  /**
+   * Delete a document by ID
+   * DELETE /documents/{doc_id}
+   */
+  delete: (docId: string) => 
+    apiClient.delete<DocumentDeleteResponse>(`/documents/${docId}`),
+};
+
+// ============================================================================
+// Chat API
+// ============================================================================
+
+export const chatAPI = {
+  /**
+   * Query documents using RAG with streaming (SSE)
+   * POST /chat
+   */
+  chat: (request: ChatRequest) => 
+    apiClient.stream('/chat', request),
+
+  /**
+   * Non-streaming chat endpoint for complete responses
+   * POST /chat/complete
+   */
+  chatComplete: (request: ChatRequest) => 
+    apiClient.post<ChatResponse>('/chat/complete', request),
+};
+
+// ============================================================================
+// RAG Framework API
+// ============================================================================
+
+export const ragAPI = {
+  /**
+   * Get the current active framework
+   * GET /rag/framework
+   */
+  getFramework: () => 
+    apiClient.get<FrameworkStatusResponse>('/rag/framework'),
+
+  /**
+   * Get performance statistics for Haystack framework
+   * GET /rag/stats
+   */
+  getStats: () => 
+    apiClient.get<RAGStatsResponse>('/rag/stats'),
+};
+
+// ============================================================================
+// Queue API
+// ============================================================================
+
+export const queueAPI = {
+  /**
+   * Get current queue status and metrics
+   * GET /queue/status
+   */
+  getStatus: () => 
+    apiClient.get<QueueStatusResponse>('/queue/status'),
+
+  /**
+   * Health check endpoint for queue system
+   * GET /queue/health
+   */
+  healthCheck: () => 
+    apiClient.get<QueueHealthResponse>('/queue/health'),
+
+  /**
+   * Manually retry a specific document from dead-letter queue
+   * POST /queue/retry/{document_id}
+   */
+  retryDocument: (documentId: string) => 
+    apiClient.post<RetryDocumentResponse>(`/queue/retry/${documentId}`),
+
+  /**
+   * List documents in dead-letter queue
+   * GET /queue/dead-letter
+   */
+  listDeadLetter: (params?: { limit?: number; offset?: number }) => 
+    apiClient.get<DeadLetterQueueResponse>('/queue/dead-letter', params),
+
+  /**
+   * Reprocess all items in dead-letter queue
+   * POST /queue/dead-letter/reprocess-all
+   */
+  reprocessAllDLQ: () => 
+    apiClient.post<ReprocessAllDLQResponse>('/queue/dead-letter/reprocess-all'),
+
+  /**
+   * Clear all queues (admin operation)
+   * DELETE /queue/purge
+   */
+  purgeAllQueues: () => 
+    apiClient.delete<PurgeQueuesResponse>('/queue/purge'),
+
+  /**
+   * Get processing status of a specific document
+   * GET /queue/document/{document_id}/status
+   */
+  getDocumentStatus: (documentId: string) => 
+    apiClient.get<DocumentProcessingStatusResponse>(`/queue/document/${documentId}/status`),
+
+  /**
+   * Manually trigger processing of retry queue
+   * POST /queue/process-retry-queue
+   */
+  processRetryQueue: () => 
+    apiClient.post<ProcessRetryQueueResponse>('/queue/process-retry-queue'),
+};
+
+// ============================================================================
+// Legacy API (kept for backward compatibility)
+// ============================================================================
 
 // Projects API
 export const projectsAPI = {
@@ -197,8 +382,8 @@ export const projectsAPI = {
   delete: (id: string) => apiClient.delete(`/projects/${id}`),
 };
 
-// Documents API
-export const documentsAPI = {
+// Legacy Documents API (for project-based documents)
+export const legacyDocumentsAPI = {
   list: (projectId: string) => apiClient.get(`/projects/${projectId}/documents`),
   upload: (projectId: string, file: File) => 
     apiClient.uploadFile(`/projects/${projectId}/documents`, file),
@@ -206,8 +391,8 @@ export const documentsAPI = {
     apiClient.delete(`/projects/${projectId}/documents/${documentId}`),
 };
 
-// Chat API
-export const chatAPI = {
+// Legacy Chat API (for project-based chat)
+export const legacyChatAPI = {
   sendMessage: (projectId: string, message: string) => 
     apiClient.post(`/projects/${projectId}/chat`, { message }),
   streamMessage: (projectId: string, message: string) => 
