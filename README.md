@@ -1,4 +1,15 @@
-# Welcome to your Lovable project
+# Pre-Flight Check - Compliance Document Review Application
+
+A modern React + TypeScript frontend for reviewing compliance documents with AI assistance.
+
+## 🔗 FastAPI Backend Integration
+
+**📘 NEW:** This repository now includes everything you need to connect to a FastAPI backend!
+
+- **[Quick Start Guide](QUICKSTART.md)** - Get connected in 5 minutes
+- **[Integration Guide](FASTAPI_INTEGRATION.md)** - Complete backend integration documentation
+- **[Architecture Overview](ARCHITECTURE.md)** - System architecture and data flow
+- **[Example Backend](backend-example/)** - Fully functional FastAPI backend example
 
 ## Project info
 
@@ -52,17 +63,61 @@ npm run dev
 
 ## What technologies are used for this project?
 
-This project is built with:
+### Frontend Stack
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **React 18** - UI framework
+- **TypeScript 5.8** - Type safety
+- **Vite 5.4** - Build tool and dev server
+- **React Router 6.30** - Client-side routing
+- **TanStack Query 5.83** - Server state management
+- **Tailwind CSS 3.4** - Utility-first CSS
+- **shadcn/ui** - High-quality UI components (Radix UI)
+- **React Hook Form + Zod** - Form validation
+
+### Backend Integration
+
+- **API Service Layer** - Ready-to-use FastAPI client
+- **Example Backend** - Complete FastAPI backend implementation
+- **TypeScript Types** - Full type safety for API responses
 
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/5f0677ef-36b3-4446-b2e3-e41a93ce6fae) and click on Share -> Publish.
+
+## 🚀 Connecting to Your FastAPI Backend
+
+### Quick Start (5 minutes)
+
+1. **Copy environment file:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Start the example backend:**
+   ```bash
+   cd backend-example
+   pip install -r requirements.txt
+   uvicorn main:app --reload
+   ```
+
+3. **Start the frontend:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Test the connection:**
+   - Visit http://localhost:8000/docs for API documentation
+   - Visit http://localhost:5173 for the app
+
+**📖 For detailed instructions, see [QUICKSTART.md](QUICKSTART.md)**
+
+## Features
+
+- 📁 **Project Management** - Create and manage compliance review projects
+- 📄 **Document Upload** - Upload and process compliance documents
+- 💬 **AI Chat Interface** - Ask questions about your documents
+- 📝 **Prompt Library** - Pre-built prompts for SOC 2, GDPR, Privacy Policy, and Terms of Service
+- 🔄 **Real-time Updates** - Powered by React Query for optimal UX
 
 ## Can I connect a custom domain to my Lovable project?
 
