@@ -16,7 +16,7 @@ export class APIError extends Error {
     message: string,
     public status?: number,
     public statusText?: string,
-    public data?: any
+    public data?: unknown
   ) {
     super(message);
     this.name = 'APIError';
@@ -82,7 +82,7 @@ export class APIClient {
   /**
    * GET request
    */
-  async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
+  async get<T>(endpoint: string, params?: Record<string, string | number | boolean>): Promise<T> {
     const url = new URL(`${this.baseURL}${endpoint}`);
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -99,7 +99,7 @@ export class APIClient {
   /**
    * POST request
    */
-  async post<T>(endpoint: string, data?: any): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
     const response = await fetchWithTimeout(`${this.baseURL}${endpoint}`, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
@@ -110,7 +110,7 @@ export class APIClient {
   /**
    * PUT request
    */
-  async put<T>(endpoint: string, data?: any): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
     const response = await fetchWithTimeout(`${this.baseURL}${endpoint}`, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
@@ -121,7 +121,7 @@ export class APIClient {
   /**
    * PATCH request
    */
-  async patch<T>(endpoint: string, data?: any): Promise<T> {
+  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
     const response = await fetchWithTimeout(`${this.baseURL}${endpoint}`, {
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
@@ -142,7 +142,7 @@ export class APIClient {
   /**
    * Upload file using FormData
    */
-  async uploadFile<T>(endpoint: string, file: File, additionalData?: Record<string, any>): Promise<T> {
+  async uploadFile<T>(endpoint: string, file: File, additionalData?: Record<string, string | number | boolean>): Promise<T> {
     const formData = new FormData();
     formData.append('file', file);
     
@@ -165,7 +165,7 @@ export class APIClient {
   /**
    * Stream response for chat/SSE endpoints
    */
-  async stream(endpoint: string, data?: any): Promise<ReadableStream<Uint8Array>> {
+  async stream(endpoint: string, data?: unknown): Promise<ReadableStream<Uint8Array>> {
     const response = await fetchWithTimeout(`${this.baseURL}${endpoint}`, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
