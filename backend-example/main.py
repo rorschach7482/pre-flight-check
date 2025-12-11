@@ -30,8 +30,7 @@ import uuid
 app = FastAPI(
     title="RAG Chatbot API",
     description="Multi-model RAG chatbot powered by Haystack",
-    version="1.0.0",
-    servers=[{"url": "/api/v1", "description": "API v1 endpoint"}]
+    version="1.0.0"
 )
 
 # CORS Configuration - Allow React frontend
@@ -174,7 +173,7 @@ stats_db = {
 # Health API
 # ============================================================================
 
-@app.get("/api/v1/", tags=["Health"])
+@app.get("/api/v1", tags=["Health"])
 async def root():
     """Root health check endpoint"""
     return {
